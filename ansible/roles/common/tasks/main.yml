@@ -18,10 +18,10 @@
     state: present
 
 - name: Install PyMySQL (Python MySQL connector for Ansible modules)
-  ansible.builtin.pip:
-    name: PyMySQL
+  ansible.builtin.apt:
+    name: python3-pymysql
     state: present
-    executable: pip3
+    update_cache: false
 
 - name: Download NodeSource setup script for Node.js {{ node_version }}
   ansible.builtin.get_url:
