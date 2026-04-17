@@ -1,0 +1,42 @@
+---
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ epicbook_app_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Clone EpicBook repository from Git
+  ansible.builtin.git:
+    repo: "{{ epicbook_app_repo }}"
+    dest: "{{ epicbook_app_dir }}"
+    version: "{{ epicbook_app_branch }}"
+    force: true
+
+- name: Install Node.js application dependencies
+  community.general.npm:
+    path: "{{ epicbook_app_dir }}"
+    state: present
+
+- name: Create application .env file from template
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ epicbook_app_dir }}/.env"
+    owner: "{{ ansible_user }}"
+    mode: '0600'
+  notify: Restart epicbook
+
+- name: Deploy systemd service unit file
+  ansible.builtin.template:
+    src: epicbook.service.j2
+    dest: /etc/systemd/system/epicbook.service
+    mode: '0644'
+  notify: Restart epicbook
+
+- name: Enable and start EpicBook service
+  ansible.builtin.systemd:
+    name: "{{ epicbook_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true

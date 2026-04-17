@@ -1,0 +1,16 @@
+---
+# MySQL server connection — FQDN is injected by the pipeline sed command
+db_host: "REPLACE_WITH_MYSQL_FQDN"
+db_name: "epicbook_db"
+
+# MySQL admin login (used for setup, schema, seeding — NOT used by the running app)
+db_user: "mysqladmin"
+# db_password is passed via --extra-vars in the pipeline — never stored in this file
+
+# Application database user (limited privileges — used by the Node.js app at runtime)
+app_db_user: "bookuser"
+# app_db_password is passed via --extra-vars in the pipeline — never stored in this file
+
+# Application deployment settings
+app_dest: /opt/epicbook       # Where the repo is cloned on the VM (used by mysql role too)
+node_version: "18"

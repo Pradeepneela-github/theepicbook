@@ -1,0 +1,57 @@
+---
+- name: Update apt package cache and upgrade all packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+    cache_valid_time: 3600
+
+- name: Install common system packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - unzip
+      - python3-pip
+      - python3-dev
+      - build-essential
+      - default-mysql-client
+    state: present
+
+- name: Install PyMySQL (Python MySQL connector for Ansible modules)
+  ansible.builtin.pip:
+    name: PyMySQL
+    state: present
+    executable: pip3
+
+- name: Download NodeSource setup script for Node.js {{ node_version }}
+  ansible.builtin.get_url:
+    url: "https://deb.nodesource.com/setup_{{ node_version }}.x"
+    dest: /tmp/nodesource_setup.sh
+    mode: '0755'
+
+- name: Run NodeSource setup script to register apt repository
+  ansible.builtin.command:
+    cmd: bash /tmp/nodesource_setup.sh
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+
+- name: Install Node.js from NodeSource repository
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+- name: Remove NodeSource setup script after install
+  ansible.builtin.file:
+    path: /tmp/nodesource_setup.sh
+    state: absent
+
+- name: Verify Node.js installation
+  ansible.builtin.command:
+    cmd: node --version
+  register: common_node_ver
+  changed_when: false
+
+- name: Display installed Node.js version
+  ansible.builtin.debug:
+    msg: "Node.js installed: {{ common_node_ver.stdout }}"

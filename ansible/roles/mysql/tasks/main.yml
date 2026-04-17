@@ -1,0 +1,108 @@
+---
+- name: Ensure CA certificates are installed (required for SSL)
+  ansible.builtin.apt:
+    name: ca-certificates
+    state: present
+    update_cache: true
+
+- name: Install MySQL Python dependency (required for Ansible MySQL modules)
+  ansible.builtin.apt:
+    name: python3-pymysql
+    state: present
+    update_cache: true
+
+- name: Install MySQL client (for debugging and manual queries)
+  ansible.builtin.apt:
+    name: mysql-client
+    state: present
+    update_cache: true
+
+- name: Wait for Azure MySQL to be reachable
+  ansible.builtin.wait_for:
+    host: "{{ db_host }}"
+    port: 3306
+    timeout: 60
+
+- name: Test DB connection
+  community.mysql.mysql_info:
+    login_host: "{{ db_host }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    ssl_ca: /etc/ssl/certs/ca-certificates.crt
+
+# NOTE: For Azure MySQL Flexible Server the login_user is just
+# the admin name (e.g. mysqladmin) without the @servername suffix.
+# The @servername suffix is only needed for Azure MySQL Single Server.
+
+- name: Create database in Azure MySQL
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_host: "{{ db_host }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    ssl_ca: /etc/ssl/certs/ca-certificates.crt
+    connect_timeout: 30
+
+- name: Create application user
+  community.mysql.mysql_user:
+    name: "{{ app_db_user }}"
+    password: "{{ app_db_password }}"
+    host: "%"
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_host: "{{ db_host }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    ssl_ca: /etc/ssl/certs/ca-certificates.crt
+    connect_timeout: 30
+
+# Step 1: Apply schema — creates all tables from the SQL file
+# The file is already on the VM because the epicbook role cloned
+# the full repo to {{ app_dest }} in the previous play.
+- name: Apply database schema
+  ansible.builtin.shell: |
+    mysql -h {{ db_host }} \
+    -u {{ db_user }} \
+    -p{{ db_password }} \
+    --ssl-mode=REQUIRED \
+    {{ db_name }} < {{ app_dest }}/db/BuyTheBook_Schema.sql
+  changed_when: false
+  failed_when: false
+
+# Step 2: Check whether the Book table already has rows
+# This makes seeding idempotent — safe to run on every pipeline run
+- name: Check if books already exist
+  community.mysql.mysql_query:
+    login_host: "{{ db_host }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    login_db: "{{ db_name }}"
+    query: "SELECT COUNT(*) as count FROM Book;"
+    ssl_ca: /etc/ssl/certs/ca-certificates.crt
+  register: mysql_book_count
+
+- name: Set seed_needed flag
+  ansible.builtin.set_fact:
+    mysql_seed_needed: "{{ mysql_book_count.query_result[0][0].count == 0 }}"
+
+# Step 3: Apply seed files only if the table is empty
+- name: Seed authors data
+  ansible.builtin.shell: |
+    mysql -h {{ db_host }} \
+    -u {{ db_user }} \
+    -p{{ db_password }} \
+    --ssl-mode=REQUIRED \
+    {{ db_name }} < {{ app_dest }}/db/author_seed.sql
+  when: mysql_seed_needed
+  changed_when: mysql_seed_needed
+
+- name: Seed books data
+  ansible.builtin.shell: |
+    mysql -h {{ db_host }} \
+    -u {{ db_user }} \
+    -p{{ db_password }} \
+    --ssl-mode=REQUIRED \
+    {{ db_name }} < {{ app_dest }}/db/books_seed.sql
+  when: mysql_seed_needed
+  changed_when: mysql_seed_needed

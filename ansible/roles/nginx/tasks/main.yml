@@ -1,0 +1,32 @@
+---
+- name: Install Nginx web server
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+
+- name: Deploy EpicBook Nginx virtual host configuration
+  ansible.builtin.template:
+    src: epicbook.conf.j2
+    dest: /etc/nginx/sites-available/epicbook
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Enable EpicBook site by creating sites-enabled symlink
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/epicbook
+    dest: /etc/nginx/sites-enabled/epicbook
+    state: link
+  notify: Restart nginx
+
+- name: Remove default Nginx site to avoid port 80 conflict
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart nginx
+
+- name: Ensure Nginx is started and enabled on boot
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
