@@ -62,15 +62,21 @@ stages:
               echo "SSH key and known_hosts configured."
             displayName: 'Configure SSH key permissions'
 
+          
+          - bash: |
+              echo "APP_PUBLIC_IP value is: $(APP_PUBLIC_IP)"
+              echo "BACKEND_PRIVATE_IP value is: $(BACKEND_PRIVATE_IP)"
+              echo "MYSQL_FQDN value is: $(MYSQL_FQDN)"
+            displayName: 'DEBUG — show variable values'
+          
+          
           - bash: |
               cd $(System.DefaultWorkingDirectory)/ansible
 
-              # Inject real IPs from Terraform outputs into the inventory file
-              sed -i "s/REPLACE_WITH_FRONTEND_IP/$(APP_PUBLIC_IP)/g" inventory.ini
-              sed -i "s/REPLACE_WITH_BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g" inventory.ini
-
-              # Inject MySQL FQDN into group vars (replaces db_host placeholder)
-              sed -i "s/REPLACE_WITH_MYSQL_FQDN/$(MYSQL_FQDN)/g" group_vars/web.yml
+              # macOS sed requires -i '' (empty string after -i)
+              sed -i '' "s/REPLACE_WITH_FRONTEND_IP/$(APP_PUBLIC_IP)/g" inventory.ini
+              sed -i '' "s/REPLACE_WITH_BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g" inventory.ini
+              sed -i '' "s/REPLACE_WITH_MYSQL_FQDN/$(MYSQL_FQDN)/g" group_vars/web.yml
 
               echo "Final inventory.ini:"
               cat inventory.ini
