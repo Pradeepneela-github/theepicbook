@@ -71,10 +71,13 @@ stages:
 
           
           - bash: |
-              echo "APP_PUBLIC_IP value is: $(APP_PUBLIC_IP)"
-              echo "BACKEND_PRIVATE_IP value is: $(BACKEND_PRIVATE_IP)"
-              echo "MYSQL_FQDN value is: $(MYSQL_FQDN)"
-            displayName: 'DEBUG — show variable values'
+              echo "APP_PUBLIC_IP = $(APP_PUBLIC_IP)"
+              echo "BACKEND_PRIVATE_IP = $(BACKEND_PRIVATE_IP)"
+              echo "MYSQL_FQDN = $(MYSQL_FQDN)"
+              echo ""
+              echo "Current inventory.ini contents:"
+              cat $(System.DefaultWorkingDirectory)/ansible/inventory.ini
+            displayName: 'DEBUG — check variables and inventory before sed'
           
           
           - bash: |
