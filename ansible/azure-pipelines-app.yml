@@ -57,10 +57,17 @@ stages:
               cp $(sshKey.secureFilePath) ~/.ssh/epicbook
               chmod 600 ~/.ssh/epicbook
 
-              # Add VM to known_hosts to prevent interactive SSH prompt
+              # Add both frontend and backend to known_hosts
               ssh-keyscan -H $(APP_PUBLIC_IP) >> ~/.ssh/known_hosts
-              echo "SSH key and known_hosts configured."
-            displayName: 'Configure SSH key permissions'
+
+              # Add backend via ProxyJump through frontend
+              ssh -i ~/.ssh/epicbook \
+                -o StrictHostKeyChecking=no \
+                -o ProxyCommand="ssh -i ~/.ssh/epicbook -o StrictHostKeyChecking=no -W %h:%p azureadmin@$(APP_PUBLIC_IP)" \
+                azureadmin@$(BACKEND_PRIVATE_IP) "echo backend reachable" || true
+
+              echo "SSH configuration done."
+            displayName: 'Configure SSH key and known hosts'
 
           
           - bash: |

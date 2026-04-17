@@ -1,7 +1,7 @@
 ---
 # MySQL server connection — FQDN is injected by the pipeline sed command
 db_host: "REPLACE_WITH_MYSQL_FQDN"
-db_name: "epicbook_db"
+db_name: "bookstore"
 
 # MySQL admin login (used for setup, schema, seeding — NOT used by the running app)
 db_user: "mysqladmin"
