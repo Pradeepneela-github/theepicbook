@@ -14,6 +14,24 @@
     version: "{{ epicbook_app_branch }}"
     force: true
 
+- name: Confirm clone succeeded
+  ansible.builtin.stat:
+    path: "{{ epicbook_app_dir }}"
+  register: epicbook_dir_check
+
+- name: Show clone result
+  ansible.builtin.debug:
+    msg: "App directory exists: {{ epicbook_dir_check.stat.exists }}"
+
+- name: Confirm db folder exists after clone
+  ansible.builtin.stat:
+    path: "{{ epicbook_app_dir }}/db"
+  register: epicbook_db_check
+
+- name: Show db folder result
+  ansible.builtin.debug:
+    msg: "db folder exists: {{ epicbook_db_check.stat.exists }}"
+
 # Add this right after the clone task
 - name: DEBUG — show full directory structure after clone
   ansible.builtin.command:
@@ -35,9 +53,12 @@
     msg: "db folder exists: {{ epicbook_db_folder.stat.exists }}"
 
 - name: Install Node.js application dependencies
-  community.general.npm:
-    path: "{{ epicbook_app_dir }}"
-    state: present
+  ansible.builtin.shell: |
+    cd {{ epicbook_app_dir }} && npm install
+  args:
+    chdir: "{{ epicbook_app_dir }}"
+  register: epicbook_npm_result
+  changed_when: epicbook_npm_result.rc == 0
 
 - name: Create application .env file from template
   ansible.builtin.template:

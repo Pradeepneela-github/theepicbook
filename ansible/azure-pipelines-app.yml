@@ -33,7 +33,10 @@ stages:
               echo "Installing community.mysql Ansible collection..."
               ansible-galaxy collection install community.mysql --force
 
-              echo "All dependencies verified."
+              echo "Installing community.general Ansible collection..."
+              ansible-galaxy collection install community.general --force
+              
+              echo "All collections, dependencies are Installed and verified."
             displayName: 'Verify Ansible and install community.mysql collection'
 
   # ============================================================
