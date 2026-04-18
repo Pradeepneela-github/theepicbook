@@ -1,24 +1,24 @@
 ---
-- name: Apply common configuration to all servers
-  hosts: web
+- name: Prepare system (common)
+  hosts: frontend
   become: true
   roles:
     - common
 
-- name: Deploy EpicBook backend application
-  hosts: backend
+- name: Install and configure Nginx
+  hosts: frontend
   become: true
   roles:
-    - epicbook
+    - nginx
 
-- name: Configure and Seed MySQL database
+- name: Install and configure MySQL
   hosts: frontend
   become: true
   roles:
     - mysql
 
-- name: Configure Nginx on frontend
+- name: Deploy EpicBook application
   hosts: frontend
   become: true
   roles:
-    - nginx
+    - epicbook

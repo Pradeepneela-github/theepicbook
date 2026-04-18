@@ -15,6 +15,8 @@
       - python3-dev
       - build-essential
       - default-mysql-client
+      - software-properties-common
+      - acl
     state: present
 
 - name: Install PyMySQL (Python MySQL connector for Ansible modules)
@@ -55,3 +57,20 @@
 - name: Display installed Node.js version
   ansible.builtin.debug:
     msg: "Node.js installed: {{ common_node_ver.stdout }}"
+
+# SSH Hardening — security best practices
+- name: Disable root SSH login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Restart SSH
+
+- name: Disable SSH password authentication (keys only)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Restart SSH
