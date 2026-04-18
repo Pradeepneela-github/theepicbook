@@ -65,7 +65,7 @@
 
 - name: Show schema file status
   ansible.builtin.debug:
-    msg: "Schema file exists: {{ schema_file.stat.exists }}"
+    msg: "MySQL Schema file exists: {{ mysql_schema_file.stat.exists }}"
 
 # Step 2: Apply schema using --force flag
 # --force tells MySQL to keep going even if a table already exists
@@ -83,13 +83,13 @@
   when: schema_file.stat.exists
   register: mysql_schema_result
   changed_when: false
-  failed_when: schema_result.rc != 0 and 'already exists' not in schema_result.stderr
+  failed_when: mysql_schema_result.rc != 0 and 'already exists' not in mysql_schema_result.stderr
 
 # Step 3: Always show what MySQL returned so you can see it in pipeline logs
 - name: Show schema apply result
   ansible.builtin.debug:
-    msg: "RC: {{ schema_result.rc }} | stderr: {{ schema_result.stderr }}"
-  when: schema_file.stat.exists
+    msg: "RC: {{ mysql_schema_result.rc }} | stderr: {{ mysql_schema_result.stderr }}"
+  when: mysql_schema_file.stat.exists
 
 # Step 4: Check whether the Book table already has rows
 # ignore_errors: true means if the table does not exist yet,
