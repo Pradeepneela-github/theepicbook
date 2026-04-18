@@ -101,6 +101,21 @@ stages:
             displayName: 'Inject Terraform outputs into Ansible inventory'
 
           - bash: |
+              echo "Copying SSH private key to frontend VM..."
+              scp -i ~/.ssh/epicbook \
+                -o StrictHostKeyChecking=no \
+                -o ConnectTimeout=30 \
+                ~/.ssh/epicbook \
+                azureadmin@$(APP_PUBLIC_IP):~/.ssh/epicbook
+
+              ssh -i ~/.ssh/epicbook \
+                -o StrictHostKeyChecking=no \
+                -o ConnectTimeout=30 \
+                azureadmin@$(APP_PUBLIC_IP) \
+                "chmod 600 ~/.ssh/epicbook && echo 'SSH key ready on frontend VM'"
+            displayName: 'Copy SSH key to frontend VM for backend access'
+
+          - bash: |
               cd $(System.DefaultWorkingDirectory)/ansible
 
               # Quick connectivity test before running the full playbook
