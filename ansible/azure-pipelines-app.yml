@@ -91,6 +91,7 @@ stages:
               sed -i '' "s/REPLACE_WITH_BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g" inventory.ini
               sed -i '' "s/REPLACE_WITH_JUMP_IP/$(APP_PUBLIC_IP)/g" inventory.ini
               sed -i '' "s/REPLACE_WITH_MYSQL_FQDN/$(MYSQL_FQDN)/g" group_vars/web.yml
+              sed -i '' "s/REPLACE_WITH_BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g" group_vars/web.yml
 
               echo "Final inventory.ini:"
               cat inventory.ini
