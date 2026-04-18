@@ -57,21 +57,44 @@
     ssl_ca: /etc/ssl/certs/ca-certificates.crt
     connect_timeout: 30
 
-# Step 1: Apply schema — creates all tables from the SQL file
-# The file is already on the VM because the epicbook role cloned
-# the full repo to {{ app_dest }} in the previous play.
+# Step 1: Verify the schema file exists before running it
+- name: Check schema file exists on VM
+  ansible.builtin.stat:
+    path: "{{ app_dest }}/db/BuyTheBook_Schema.sql"
+  register: mysql_schema_file
+
+- name: Show schema file status
+  ansible.builtin.debug:
+    msg: "Schema file exists: {{ schema_file.stat.exists }}"
+
+# Step 2: Apply schema using --force flag
+# --force tells MySQL to keep going even if a table already exists
+# This is needed because CREATE TABLE has no IF NOT EXISTS in this schema
+# Without --force, MySQL stops at the first duplicate table error and
+# never creates the remaining tables
 - name: Apply database schema
   ansible.builtin.shell: |
     mysql -h {{ db_host }} \
     -u {{ db_user }} \
     -p{{ db_password }} \
     --ssl-mode=REQUIRED \
+    --force \
     {{ db_name }} < {{ app_dest }}/db/BuyTheBook_Schema.sql
+  when: schema_file.stat.exists
+  register: mysql_schema_result
   changed_when: false
-  failed_when: false
+  failed_when: schema_result.rc != 0 and 'already exists' not in schema_result.stderr
 
-# Step 2: Check whether the Book table already has rows
-# This makes seeding idempotent — safe to run on every pipeline run
+# Step 3: Always show what MySQL returned so you can see it in pipeline logs
+- name: Show schema apply result
+  ansible.builtin.debug:
+    msg: "RC: {{ schema_result.rc }} | stderr: {{ schema_result.stderr }}"
+  when: schema_file.stat.exists
+
+# Step 4: Check whether the Book table already has rows
+# ignore_errors: true means if the table does not exist yet,
+# the task does not crash the whole playbook — it just registers
+# the failure and moves on to the set_fact step below
 - name: Check if books already exist
   community.mysql.mysql_query:
     login_host: "{{ db_host }}"
@@ -81,12 +104,16 @@
     query: "SELECT COUNT(*) as count FROM Book;"
     ssl_ca: /etc/ssl/certs/ca-certificates.crt
   register: mysql_book_count
+  ignore_errors: true
 
+# Step 5: Decide whether seeding is needed
+# If the query failed (table missing) OR the count is 0 — seed the data
+# If the table already has rows — skip seeding to avoid duplicates
 - name: Set seed_needed flag
   ansible.builtin.set_fact:
-    mysql_seed_needed: "{{ mysql_book_count.query_result[0][0].count == 0 }}"
+    mysql_seed_needed: "{{ mysql_book_count.failed or mysql_book_count.query_result[0][0].count == 0 }}"
 
-# Step 3: Apply seed files only if the table is empty
+# Step 5: Apply seed files only if the table is empty
 - name: Seed authors data
   ansible.builtin.shell: |
     mysql -h {{ db_host }} \
