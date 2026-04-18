@@ -17,3 +17,6 @@ node_version: "18"
 
 # Application port — shared across epicbook and nginx roles
 epicbook_app_port: 3000
+
+# Backend application host (for Nginx proxy) — FQDN is injected by the pipeline sed command
+backend_app_host: "REPLACE_WITH_BACKEND_PRIVATE_IP"

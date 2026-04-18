@@ -7,7 +7,7 @@ server {
 
     # Proxy all requests to the Node.js backend on port 3000
     location / {
-        proxy_pass         http://localhost:{{ epicbook_app_port }};
+        proxy_pass         http://{{ backend_app_host }}:{{ epicbook_app_port }};
         proxy_http_version 1.1;
         proxy_set_header   Upgrade $http_upgrade;
         proxy_set_header   Connection 'upgrade';
