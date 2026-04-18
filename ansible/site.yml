@@ -11,8 +11,8 @@
   roles:
     - epicbook
 
-- name: Seed MySQL database
-  hosts: backend
+- name: Configure and Seed MySQL database
+  hosts: frontend
   become: true
   roles:
     - mysql
