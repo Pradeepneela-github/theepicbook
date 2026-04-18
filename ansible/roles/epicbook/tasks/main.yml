@@ -1,4 +1,9 @@
 ---
+- name: Remove existing application directory if present
+  ansible.builtin.file:
+    path: "{{ epicbook_app_dir }}"
+    state: absent
+
 - name: Create application directory
   ansible.builtin.file:
     path: "{{ epicbook_app_dir }}"
