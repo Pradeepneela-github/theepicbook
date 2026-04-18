@@ -80,7 +80,7 @@
     --ssl-mode=REQUIRED \
     --force \
     {{ db_name }} < {{ app_dest }}/db/BuyTheBook_Schema.sql
-  when: schema_file.stat.exists
+  when: mysql_schema_file.stat.exists
   register: mysql_schema_result
   changed_when: false
   failed_when: mysql_schema_result.rc != 0 and 'already exists' not in mysql_schema_result.stderr
