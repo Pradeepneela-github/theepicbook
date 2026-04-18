@@ -57,6 +57,23 @@
     ssl_ca: /etc/ssl/certs/ca-certificates.crt
     connect_timeout: 30
 
+# Step 0: Copy seed files to VM (they're in the Ansible role's files/ directory)
+- name: Create db directory on VM
+  ansible.builtin.file:
+    path: "{{ app_dest }}/db"
+    state: directory
+    mode: '0755'
+
+- name: Copy schema file to VM
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ app_dest }}/db/{{ item | basename }}"
+    mode: '0644'
+  loop:
+    - BuyTheBook_Schema.sql
+    - author_seed.sql
+    - books_seed.sql
+
 # Step 1: Verify the schema file exists before running it
 - name: Check schema file exists on VM
   ansible.builtin.stat:
