@@ -1,4 +1,5 @@
 ---
+
 - name: Remove existing application directory if present
   ansible.builtin.file:
     path: "{{ epicbook_app_dir }}"
@@ -19,28 +20,13 @@
     version: "{{ epicbook_app_branch }}"
     force: true
 
-- name: Confirm clone succeeded
-  ansible.builtin.stat:
-    path: "{{ epicbook_app_dir }}"
-  register: epicbook_dir_check
+# -------------------------
+# DEBUG (keep these, they help a LOT)
+# -------------------------
 
-- name: Show clone result
-  ansible.builtin.debug:
-    msg: "App directory exists: {{ epicbook_dir_check.stat.exists }}"
-
-- name: Confirm db folder exists after clone
-  ansible.builtin.stat:
-    path: "{{ epicbook_app_dir }}/db"
-  register: epicbook_db_check
-
-- name: Show db folder result
-  ansible.builtin.debug:
-    msg: "db folder exists: {{ epicbook_db_check.stat.exists }}"
-
-# Add this right after the clone task
 - name: DEBUG — show full directory structure after clone
   ansible.builtin.command:
-    cmd: find /opt/epicbook -maxdepth 3 -type f
+    cmd: find {{ epicbook_app_dir }} -maxdepth 3 -type f
   register: epicbook_cloned_files
   changed_when: false
 
@@ -48,22 +34,19 @@
   ansible.builtin.debug:
     msg: "{{ epicbook_cloned_files.stdout_lines }}"
 
-- name: DEBUG — check db folder exists
-  ansible.builtin.stat:
-    path: "{{ epicbook_app_dir }}/db"
-  register: epicbook_db_folder
-
-- name: DEBUG — print db folder status
-  ansible.builtin.debug:
-    msg: "db folder exists: {{ epicbook_db_folder.stat.exists }}"
+# -------------------------
+# Install dependencies
+# -------------------------
 
 - name: Install Node.js application dependencies
-  ansible.builtin.shell: |
-    cd {{ epicbook_app_dir }} && npm install
+  ansible.builtin.command: npm install
   args:
     chdir: "{{ epicbook_app_dir }}"
   register: epicbook_npm_result
-  changed_when: epicbook_npm_result.rc == 0
+
+# -------------------------
+# ENV + CONFIG
+# -------------------------
 
 - name: Create application .env file from template
   ansible.builtin.template:
@@ -71,7 +54,6 @@
     dest: "{{ epicbook_app_dir }}/.env"
     owner: "{{ ansible_user }}"
     mode: '0600'
-  notify: Restart epicbook
 
 - name: Create config directory
   ansible.builtin.file:
@@ -80,24 +62,61 @@
     owner: "{{ ansible_user }}"
     mode: '0755'
 
-- name: Create config.json from template with actual credentials
+- name: Create config.json from template
   ansible.builtin.template:
     src: config.json.j2
     dest: "{{ epicbook_app_dir }}/config/config.json"
     owner: "{{ ansible_user }}"
     mode: '0644'
-  notify: Restart epicbook
+
+# -------------------------
+# SYSTEMD SERVICE
+# -------------------------
 
 - name: Deploy systemd service unit file
   ansible.builtin.template:
     src: epicbook.service.j2
     dest: /etc/systemd/system/epicbook.service
     mode: '0644'
-  notify: Restart epicbook
+
+- name: Reload systemd
+  ansible.builtin.command: systemctl daemon-reload
 
 - name: Enable and start EpicBook service
   ansible.builtin.systemd:
     name: "{{ epicbook_service_name }}"
     enabled: true
-    state: started
-    daemon_reload: true
+    state: restarted
+
+# -------------------------
+# 🔥 CRITICAL ADDITIONS BELOW
+# -------------------------
+
+# Wait a few seconds for app to start
+- name: Wait for app to start
+  ansible.builtin.pause:
+    seconds: 10
+
+# Check if port is listening
+- name: Check if app is listening on port {{ epicbook_app_port }}
+  ansible.builtin.shell: |
+    ss -tlnp | grep :{{ epicbook_app_port }} || true
+  register: port_check
+  changed_when: false
+
+- name: DEBUG — show port check
+  ansible.builtin.debug:
+    msg: "{{ port_check.stdout }}"
+
+# Fail early if app is not running
+- name: Fail if app is not listening
+  ansible.builtin.fail:
+    msg: "Application is NOT running on port {{ epicbook_app_port }}"
+  when: port_check.stdout == ""
+
+# Optional: test HTTP locally
+- name: Test HTTP endpoint locally
+  ansible.builtin.uri:
+    url: "http://localhost:{{ epicbook_app_port }}"
+    method: GET
+    status_code: 200
