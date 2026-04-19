@@ -7,13 +7,15 @@ After=network.target
 Type=simple
 User={{ ansible_user }}
 WorkingDirectory={{ epicbook_app_dir }}
+Environment="NODE_ENV=production"
+EnvironmentFile={{ epicbook_app_dir }}/.env
 ExecStart=/usr/bin/node {{ epicbook_app_dir }}/server.js
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=epicbook
-EnvironmentFile={{ epicbook_app_dir }}/.env
 
 [Install]
 WantedBy=multi-user.target
+
