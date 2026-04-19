@@ -1,6 +1,6 @@
 ---
 epicbook_app_dir: /opt/epicbook
-epicbook_app_port: 3000
+epicbook_app_port: 8080
 epicbook_app_repo: "https://github.com/pravinmishraaws/theepicbook.git"
 epicbook_app_branch: "main"
 epicbook_service_name: "epicbook"
