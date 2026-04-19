@@ -73,6 +73,14 @@
     mode: '0600'
   notify: Restart epicbook
 
+- name: Copy config.js file to application directory
+  ansible.builtin.copy:
+    src: config.js
+    dest: "{{ epicbook_app_dir }}/config.js"
+    owner: "{{ ansible_user }}"
+    mode: '0644'
+  notify: Restart epicbook
+
 - name: Deploy systemd service unit file
   ansible.builtin.template:
     src: epicbook.service.j2
