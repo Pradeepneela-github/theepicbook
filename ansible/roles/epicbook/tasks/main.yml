@@ -73,10 +73,17 @@
     mode: '0600'
   notify: Restart epicbook
 
-- name: Copy config directory to application
-  ansible.builtin.copy:
-    src: config/
-    dest: "{{ epicbook_app_dir }}/config/"
+- name: Create config directory
+  ansible.builtin.file:
+    path: "{{ epicbook_app_dir }}/config"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Create config.json from template with actual credentials
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: "{{ epicbook_app_dir }}/config/config.json"
     owner: "{{ ansible_user }}"
     mode: '0644'
   notify: Restart epicbook
