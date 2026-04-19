@@ -73,10 +73,10 @@
     mode: '0600'
   notify: Restart epicbook
 
-- name: Copy config.js file to application directory
+- name: Copy config directory to application
   ansible.builtin.copy:
-    src: config.js
-    dest: "{{ epicbook_app_dir }}/config.js"
+    src: config/
+    dest: "{{ epicbook_app_dir }}/config/"
     owner: "{{ ansible_user }}"
     mode: '0644'
   notify: Restart epicbook

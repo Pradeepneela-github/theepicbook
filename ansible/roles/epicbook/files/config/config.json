@@ -1,0 +1,9 @@
+{
+  "production": {
+    "username": "bookuser",
+    "password": "will-be-overridden-by-env",
+    "database": "bookstore",
+    "host": "will-be-overridden-by-env",
+    "dialect": "mysql"
+  }
+}
