@@ -1,0 +1,84 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  name: 'Epicbook- Dual Pipelines'
+
+variables:
+  FRONTEND_IP: '20.91.205.66'
+  BACKEND_IP: '51.107.181.70'
+  BACKEND_PRIVATE_IP: '10.0.2.4'
+  MYSQL_FQDN: 'epicbook-mysql-99.mysql.database.azure.com'
+  MYSQL_ADMIN_USER: 'epicadmin'
+
+stages:
+  - stage: AppDeploy
+    displayName: Configure and Deploy EpicBook Application via Ansible
+    jobs:
+      - job: AnsibleJob
+        displayName: Run Ansible to Configure VMs and Deploy App
+        steps:
+
+          - task: DownloadSecureFile@1
+            name: sshKey
+            displayName: Download SSH Private Key from Secure Files
+            inputs:
+              secureFile: 'epicbook'
+
+          - script: |
+              chmod 600 $(sshKey.secureFilePath)
+              echo "SSH key permissions locked to owner read and write only."
+            displayName: Set Correct SSH Key File Permissions
+
+          - script: |
+              pip3 install ansible ansible-core
+              ansible-galaxy collection install community.general
+              ansible --version
+            displayName: Install Ansible and the community.general Collection
+
+          - script: |
+              echo "Waiting 90 seconds for Azure VMs to finish first-boot initialization..."
+              sleep 90
+              echo "Wait complete. Proceeding with Ansible."
+            displayName: Wait for VMs to Fully Boot
+
+          - script: |
+              sed -i 's/FRONTEND_IP/$(FRONTEND_IP)/g' ansible/inventory/hosts.ini
+              sed -i 's/BACKEND_IP/$(BACKEND_IP)/g' ansible/inventory/hosts.ini
+              sed -i 's|SSH_KEY_PATH|$(sshKey.secureFilePath)|g' ansible/inventory/hosts.ini
+              echo "Inventory file after substitution:"
+              cat ansible/inventory/hosts.ini
+            displayName: Replace IP Placeholders in Ansible Inventory
+
+          - script: |
+              sed -i 's/BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g' ansible/roles/nginx/files/nginx.conf
+              echo "Nginx upstream config after substitution:"
+              grep "server " ansible/roles/nginx/files/nginx.conf
+            displayName: Replace Backend Private IP in Nginx Config
+
+          - script: |
+              ansible-playbook \
+                -i ansible/inventory/hosts.ini \
+                ansible/playbooks/site.yml \
+                --extra-vars "mysql_fqdn=$(MYSQL_FQDN) mysql_admin_user=$(MYSQL_ADMIN_USER) mysql_admin_password=$MYSQL_ADMIN_PASSWORD_ENV" \
+                -v
+            displayName: Run Ansible Playbook Against Both VMs
+            env:
+              MYSQL_ADMIN_PASSWORD_ENV: $(MYSQL_ADMIN_PASSWORD)
+
+          - script: |
+              echo "Waiting 30 seconds for services to stabilize..."
+              sleep 30
+              HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://$(FRONTEND_IP))
+              echo "HTTP response code from EpicBook frontend: $HTTP_STATUS"
+              if [ "$HTTP_STATUS" = "200" ]; then
+                echo "SUCCESS: EpicBook is live and responding correctly."
+              else
+                echo "FAILED: Expected HTTP 200 but received $HTTP_STATUS"
+                echo "Check PM2 logs on the backend VM: pm2 logs epicbook"
+                echo "Check Nginx logs on the frontend VM: sudo journalctl -u nginx"
+                exit 1
+              fi
+            displayName: Verify Application Responds with HTTP 200
