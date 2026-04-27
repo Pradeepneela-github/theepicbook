@@ -1,0 +1,22 @@
+- name: Wait for all VMs to be ready to accept SSH connections
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Retry SSH connection until the VM is fully booted
+      wait_for_connection:
+        delay: 15
+        timeout: 180
+
+- name: Configure the Backend VM with Node.js Application
+  hosts: backend
+  gather_facts: true
+  roles:
+    - common
+    - epicbook
+
+- name: Configure the Frontend VM with Nginx Reverse Proxy
+  hosts: frontend
+  gather_facts: true
+  roles:
+    - common
+    - nginx

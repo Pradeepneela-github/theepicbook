@@ -1,0 +1,79 @@
+- name: Copy schema SQL file to backend VM
+  copy:
+    src: BuyTheBook_Schema.sql
+    dest: /tmp/01-schema.sql
+    mode: '0644'
+
+- name: Copy author seed SQL file to backend VM
+  copy:
+    src: author_seed.sql
+    dest: /tmp/02-authors.sql
+    mode: '0644'
+
+- name: Copy books seed SQL file to backend VM
+  copy:
+    src: books_seed.sql
+    dest: /tmp/03-books.sql
+    mode: '0644'
+
+- name: Create the epicuser application account in MySQL
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      -e "CREATE USER IF NOT EXISTS '{{ mysql_app_user }}'@'%' IDENTIFIED BY '{{ mysql_app_password }}';"
+  no_log: true
+
+- name: Grant epicuser access to the bookstore database
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      -e "GRANT ALL PRIVILEGES ON {{ mysql_database }}.* TO '{{ mysql_app_user }}'@'%'; FLUSH PRIVILEGES;"
+  no_log: true
+
+- name: Run Step 1 of 3 - Create database tables from schema
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      {{ mysql_database }} < /tmp/01-schema.sql
+  no_log: true
+
+- name: Run Step 2 of 3 - Insert authors into Author table
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      {{ mysql_database }} < /tmp/02-authors.sql
+  no_log: true
+
+- name: Run Step 3 of 3 - Insert books into Book table
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      {{ mysql_database }} < /tmp/03-books.sql
+  no_log: true
+
+- name: Verify seeding worked by counting books
+  shell: |
+    mysql -h {{ mysql_fqdn }} \
+      -u {{ mysql_admin_user }} \
+      -p"{{ mysql_admin_password }}" \
+      -e "SELECT COUNT(*) AS book_count FROM {{ mysql_database }}.Book;"
+  no_log: true
+  register: book_count_result
+
+- name: Show the book count to confirm seeding was successful
+  debug:
+    msg: "Seeding complete. Database result: {{ book_count_result.stdout }}"
+
+- name: Remove temporary SQL files from VM for cleanliness
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/01-schema.sql
+    - /tmp/02-authors.sql
+    - /tmp/03-books.sql

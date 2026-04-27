@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 - name: Update apt package cache and upgrade all packages
   ansible.builtin.apt:
@@ -6,10 +7,20 @@
     cache_valid_time: 3600
 
 - name: Install common system packages
+=======
+- name: Update apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Install required system packages
+>>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
   ansible.builtin.apt:
     name:
       - curl
       - git
+<<<<<<< HEAD
       - unzip
       - python3-pip
       - python3-dev
@@ -74,3 +85,36 @@
     line: 'PasswordAuthentication no'
     state: present
   notify: Restart SSH
+=======
+      - build-essential
+      - mysql-client
+      - python3-pip
+    state: present
+  become: true
+
+- name: Install Node.js 18 using NodeSource setup script
+  ansible.builtin.shell: |
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs
+  become: true
+  args:
+    creates: /usr/bin/node
+
+- name: Pause to allow Node.js install to fully complete
+  ansible.builtin.pause:
+    seconds: 10
+
+- name: Verify Node.js installed correctly
+  ansible.builtin.command: node --version
+  register: node_version_result
+
+- name: Show the installed Node.js version
+  ansible.builtin.debug:
+    msg: "Node.js is ready: {{ node_version_result.stdout }}"
+
+- name: Install PM2 process manager globally
+  community.general.npm:
+    name: pm2
+    global: true
+  become: true
+>>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)

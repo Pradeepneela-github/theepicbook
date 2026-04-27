@@ -1,0 +1,8 @@
+node_version: "18"
+app_port: 8080
+app_directory: "/opt/epicbook"
+mysql_database: "bookstore"
+mysql_app_user: "epicuser"
+mysql_app_password: "Demo123"
+mysql_admin_user: "epicadmin"
+node_env: "production"

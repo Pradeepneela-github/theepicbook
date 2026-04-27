@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 
 - name: Remove existing application directory if present
@@ -120,3 +121,60 @@
     url: "http://localhost:{{ epicbook_app_port }}"
     method: GET
     status_code: 200
+=======
+- name: Create the application directory
+  ansible.builtin.file:
+    path: "{{ app_directory }}"
+    state: directory
+    mode: '0755'
+    owner: azureuser
+    group: azureuser
+  become: true
+
+- name: Clone the EpicBook application from GitHub
+  ansible.builtin.git:
+    repo: https://github.com/pravinmishraaws/theepicbook.git
+    dest: "{{ app_directory }}"
+    version: main
+    force: true
+  become: true
+  become_user: azureuser
+
+- name: Install Node.js dependencies from package.json
+  community.general.npm:
+    path: "{{ app_directory }}"
+    state: present
+  become: true
+  become_user: azureuser
+
+- name: Create the production environment file
+  ansible.builtin.copy:
+    content: |
+      NODE_ENV={{ node_env }}
+      PORT={{ app_port }}
+      JAWSDB_URL=mysql://{{ mysql_app_user }}:{{ mysql_app_password }}@{{ mysql_fqdn }}:3306/{{ mysql_database }}
+    dest: "{{ app_directory }}/.env"
+    owner: azureuser
+    group: azureuser
+    mode: '0600'
+  become: true
+
+- name: Run database seeding tasks
+  include_tasks: db_seed.yml
+
+- name: Start the application with PM2
+  ansible.builtin.shell: |
+    cd {{ app_directory }}
+    pm2 delete epicbook 2>/dev/null || true
+    pm2 start server.js --name epicbook
+    pm2 save
+  become: true
+  become_user: azureuser
+
+- name: Wait for the app to start listening on port 8080
+  ansible.builtin.wait_for:
+    port: "{{ app_port }}"
+    host: localhost
+    delay: 5
+    timeout: 60
+>>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
