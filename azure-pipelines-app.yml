@@ -45,15 +45,15 @@ stages:
             displayName: Wait for VMs to Fully Boot
 
           - script: |
-              sed -i 's/FRONTEND_IP/$(FRONTEND_IP)/g' ansible/inventory/hosts.ini
-              sed -i 's/BACKEND_IP/$(BACKEND_IP)/g' ansible/inventory/hosts.ini
-              sed -i 's|SSH_KEY_PATH|$(sshKey.secureFilePath)|g' ansible/inventory/hosts.ini
+              sed -i '' 's/FRONTEND_IP/$(FRONTEND_IP)/g' ansible/inventory/hosts.ini
+              sed -i '' 's/BACKEND_IP/$(BACKEND_IP)/g' ansible/inventory/hosts.ini
+              sed -i '' 's|SSH_KEY_PATH|$(sshKey.secureFilePath)|g' ansible/inventory/hosts.ini
               echo "Inventory file after substitution:"
               cat ansible/inventory/hosts.ini
             displayName: Replace IP Placeholders in Ansible Inventory
 
           - script: |
-              sed -i 's/BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g' ansible/roles/nginx/files/nginx.conf
+              sed -i '' 's/BACKEND_PRIVATE_IP/$(BACKEND_PRIVATE_IP)/g' ansible/roles/nginx/files/nginx.conf
               echo "Nginx upstream config after substitution:"
               grep "server " ansible/roles/nginx/files/nginx.conf
             displayName: Replace Backend Private IP in Nginx Config
