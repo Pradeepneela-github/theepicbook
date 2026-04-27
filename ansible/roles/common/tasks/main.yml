@@ -36,7 +36,7 @@
     msg: "Node.js is ready: {{ node_version_result.stdout }}"
 
 - name: Install PM2 process manager globally
-  ansible.builtin.npm:
+  community.general.npm:
     name: pm2
     global: true
   become: true

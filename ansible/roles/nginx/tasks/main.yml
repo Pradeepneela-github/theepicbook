@@ -60,4 +60,5 @@
     status_code: 200
   retries: 5
   delay: 10
-
+  register: nginx_response
+  until: nginx_response.status == 200
