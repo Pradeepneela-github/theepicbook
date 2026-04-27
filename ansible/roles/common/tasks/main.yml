@@ -1,13 +1,3 @@
-<<<<<<< HEAD
----
-- name: Update apt package cache and upgrade all packages
-  ansible.builtin.apt:
-    update_cache: true
-    upgrade: true
-    cache_valid_time: 3600
-
-- name: Install common system packages
-=======
 - name: Update apt package cache
   ansible.builtin.apt:
     update_cache: true
@@ -15,77 +5,10 @@
   become: true
 
 - name: Install required system packages
->>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
   ansible.builtin.apt:
     name:
       - curl
       - git
-<<<<<<< HEAD
-      - unzip
-      - python3-pip
-      - python3-dev
-      - build-essential
-      - default-mysql-client
-      - software-properties-common
-      - acl
-    state: present
-
-- name: Install PyMySQL (Python MySQL connector for Ansible modules)
-  ansible.builtin.apt:
-    name: python3-pymysql
-    state: present
-    update_cache: false
-
-- name: Download NodeSource setup script for Node.js {{ node_version }}
-  ansible.builtin.get_url:
-    url: "https://deb.nodesource.com/setup_{{ node_version }}.x"
-    dest: /tmp/nodesource_setup.sh
-    mode: '0755'
-
-- name: Run NodeSource setup script to register apt repository
-  ansible.builtin.command:
-    cmd: bash /tmp/nodesource_setup.sh
-  args:
-    creates: /etc/apt/sources.list.d/nodesource.list
-
-- name: Install Node.js from NodeSource repository
-  ansible.builtin.apt:
-    name: nodejs
-    state: present
-    update_cache: true
-
-- name: Remove NodeSource setup script after install
-  ansible.builtin.file:
-    path: /tmp/nodesource_setup.sh
-    state: absent
-
-- name: Verify Node.js installation
-  ansible.builtin.command:
-    cmd: node --version
-  register: common_node_ver
-  changed_when: false
-
-- name: Display installed Node.js version
-  ansible.builtin.debug:
-    msg: "Node.js installed: {{ common_node_ver.stdout }}"
-
-# SSH Hardening — security best practices
-- name: Disable root SSH login
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^PermitRootLogin'
-    line: 'PermitRootLogin no'
-    state: present
-  notify: Restart SSH
-
-- name: Disable SSH password authentication (keys only)
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^PasswordAuthentication'
-    line: 'PasswordAuthentication no'
-    state: present
-  notify: Restart SSH
-=======
       - build-essential
       - mysql-client
       - python3-pip
@@ -113,8 +36,7 @@
     msg: "Node.js is ready: {{ node_version_result.stdout }}"
 
 - name: Install PM2 process manager globally
-  community.general.npm:
+  ansible.builtin.npm:
     name: pm2
     global: true
   become: true
->>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)

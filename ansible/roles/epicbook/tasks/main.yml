@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 
 - name: Remove existing application directory if present
@@ -121,7 +120,7 @@
     url: "http://localhost:{{ epicbook_app_port }}"
     method: GET
     status_code: 200
-=======
+
 - name: Create the application directory
   ansible.builtin.file:
     path: "{{ app_directory }}"
@@ -177,4 +176,4 @@
     host: localhost
     delay: 5
     timeout: 60
->>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
+

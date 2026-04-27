@@ -1,13 +1,10 @@
-<<<<<<< HEAD
 ---
-=======
->>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
 - name: Install Nginx web server
   ansible.builtin.apt:
     name: nginx
     state: present
     update_cache: true
-<<<<<<< HEAD
+
 
 - name: Deploy EpicBook Nginx virtual host configuration
   ansible.builtin.template:
@@ -34,7 +31,6 @@
     name: nginx
     enabled: true
     state: started
-=======
   become: true
 
 - name: Deploy the custom Nginx configuration file
@@ -64,4 +60,4 @@
     status_code: 200
   retries: 5
   delay: 10
->>>>>>> 2221b9c (Add ansible, azure-pipelines-app.yml and update books_seed.sql)
+
