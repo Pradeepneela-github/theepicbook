@@ -67,6 +67,7 @@ stages:
             displayName: Run Ansible Playbook Against Both VMs
             env:
               MYSQL_ADMIN_PASSWORD_ENV: $(MYSQL_ADMIN_PASSWORD)
+              ANSIBLE_CONFIG: $(System.DefaultWorkingDirectory)/ansible/ansible.cfg
 
           - script: |
               echo "Waiting 30 seconds for services to stabilize..."
