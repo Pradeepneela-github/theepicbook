@@ -45,7 +45,7 @@
     pm2 start server.js --name epicbook
     pm2 save
   become: true
-  become_user: azureuser
+
 
 - name: Wait for the app to start listening on port 8080
   ansible.builtin.wait_for:
