@@ -41,10 +41,14 @@
 - name: Start the application with PM2
   ansible.builtin.shell: |
     cd {{ app_directory }}
+    set -a
+    source .env
+    set +a
     pm2 delete epicbook 2>/dev/null || true
     pm2 start server.js --name epicbook
     pm2 save
   become: true
+  become_user: azureuser
 
 
 - name: Wait for the app to start listening on port 8080
