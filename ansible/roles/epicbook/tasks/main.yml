@@ -47,6 +47,8 @@
     pm2 delete epicbook 2>/dev/null || true
     pm2 start server.js --name epicbook
     pm2 save
+  args:
+    executable: /bin/bash
   become: true
   become_user: azureuser
 
